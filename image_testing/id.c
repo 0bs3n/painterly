@@ -30,6 +30,7 @@ plot(int x, int y, Image *image, Color color)
         int i;
         x *= image->bpp;
         int target_pixel = x + (y * (image->width * image->bpp));
+        printf("Current colorvalue: %02x%02x%02x\n", image->data[target_pixel], image->data[target_pixel+1], image->data[target_pixel+2]);
         for (i = 0; i < image->bpp; i++)
             image->data[target_pixel + i] = color[i];
         return 0;
@@ -52,7 +53,32 @@ draw_rect(int x, int y, int w, int h, Color c, Image *image)
 }
 
 void
-draw_circle(int h, int k, int r, Color c, Image *image)
+draw_circle(int h, int k, int r, int filled, Color c, Image *image)
+{
+    int x, y;
+    int px, npx;
+    for (x = h - r, y = k - r; y <= k + r; x++) {
+        px = sqrt((r*r) - ((y - k) * (y - k))) + h;
+        npx = -sqrt((r*r) - ((y - k) * (y - k))) + h;
+        if (filled) {
+            for (; px >= h && npx <= h; px--, npx++) {
+                plot(px, y, image, c);
+                plot(npx, y, image, c);
+            }
+        } else {
+            plot(px, y, image, c);
+            plot(npx, y, image, c);
+        }
+
+        if (x == h + r + 1) {
+            x = h - r;
+            y++;
+        }
+    }
+}
+
+void
+draw_cross(int h, int k, int r,  Color c, Image *image)
 {
     int x, y;
     for ( x = h - r, y = k - r; y < k + r; x++) {
@@ -64,12 +90,6 @@ draw_circle(int h, int k, int r, Color c, Image *image)
             y++;
         }
     }
-    /*
-    for (y = k - r; y < k + r; y++) {
-        plot(h - y, y, image, c);
-    }
-    */
-
 }
 
 int
@@ -80,7 +100,9 @@ main()
     int sb = image.width * image.height * image.bpp;
     Color c = {0xff, 0, 0, 0};
     
-    draw_circle(200, 200, 100, c, &image);
+    draw_circle(100, 100, 50, 0, c, &image);
+    draw_circle(220, 100, 50, 1, c, &image);
+    // draw_circle(400, 400, 300, c, &image);
 
     printf("Width: %d\nHeight %d\nBytes per pixels: %d\nSize: %d\n",
             image.width, image.height, image.bpp, sb);
