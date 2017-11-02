@@ -1,27 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
+#include "id.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 #include <stb_image_write.h>
 
-
-typedef struct {
-    int height;
-    int thickness;
-    int x, y;
-} Rect;
-
-typedef struct {
-    int width;
-    int height;
-    int bpp;
-    unsigned char* data;
-} Image;
-
-typedef int Color[4];
+int
+align(int num, int alignment)
+{
+    return alignment * (num / alignment);
+}
 
 int
 plot(int x, int y, Image *image, Color color) 
@@ -30,12 +17,49 @@ plot(int x, int y, Image *image, Color color)
         int i;
         x *= image->bpp;
         int target_pixel = x + (y * (image->width * image->bpp));
-        printf("Current colorvalue: %02x%02x%02x\n", image->data[target_pixel], image->data[target_pixel+1], image->data[target_pixel+2]);
         for (i = 0; i < image->bpp; i++)
             image->data[target_pixel + i] = color[i];
         return 0;
     }
     else return 1;
+}
+
+int
+filter(int x, int y, Image *image, Color color, int cv)
+{
+    if (x > 0 && y > 0 && x < image->width && y < image->height) {
+        x *= image->bpp; 
+        int target_pixel = x + (y * (image->width * image->bpp));
+        image->data[target_pixel + cv] = color[cv];
+        return 0;
+    }
+    else return 1;
+}
+
+void
+scan(Image *image, char colors[][3], int numc) 
+{
+    int x, y;
+    int size = image->width * image->height;
+    int i, j;
+    for (x = 0, j = 0, y = 0; 
+            j < numc; 
+            x += (3 * ((size / 64) / 3)) * image->bpp, 
+            y += image->height / numc, j++) {
+
+        printf("%d: x: %d, y: %d\n", j, (x / image->bpp) / image->width, y);
+
+        for (i = 0; i < 3; i++) {
+            colors[j][i] = image->data[(x + (y * image->width)) + i];
+            printf("/%02x", colors[j][i]);
+        }
+
+        printf("\n");
+        printf("/%02x", image->data[x + (y * image->width)]);
+        printf("/%02x", image->data[x + (y * image->width) + 1]);
+        printf("/%02x ", image->data[x + (y * image->width) + 2]);
+        printf("\n");
+    }
 }
 
 void
@@ -78,6 +102,31 @@ draw_circle(int h, int k, int r, int filled, Color c, Image *image)
 }
 
 void
+filter_circle(int h, int k, int r, int filled, int cv, Color c, Image *image)
+{
+    int x, y;
+    int px, npx;
+    for (x = h - r, y = k - r; y <= k + r; x++) {
+        px = sqrt((r*r) - ((y - k) * (y - k))) + h;
+        npx = -sqrt((r*r) - ((y - k) * (y - k))) + h;
+        if (filled) {
+            for (; px >= h && npx <= h; px--, npx++) {
+                filter(px, y, image, c, cv);
+                filter(npx, y, image, c, cv);
+            }
+        } else {
+            filter(px, y, image, c, cv);
+            filter(npx, y, image, c, cv);
+        }
+
+        if (x == h + r + 1) {
+            x = h - r;
+            y++;
+        }
+    }
+}
+
+void
 draw_cross(int h, int k, int r,  Color c, Image *image)
 {
     int x, y;
@@ -92,6 +141,7 @@ draw_cross(int h, int k, int r,  Color c, Image *image)
     }
 }
 
+/*
 int
 main()
 {
@@ -99,10 +149,9 @@ main()
     image.data = stbi_load("../test.png", &image.width, &image.height, &image.bpp, 0);
     int sb = image.width * image.height * image.bpp;
     Color c = {0xff, 0, 0, 0};
-    
-    draw_circle(100, 100, 50, 0, c, &image);
-    draw_circle(220, 100, 50, 1, c, &image);
-    // draw_circle(400, 400, 300, c, &image);
+    Color c2 = {0xff, 0, 0, 0};
+
+    filter_circle(220, 100, 50, 1, 0, c2, &image);
 
     printf("Width: %d\nHeight %d\nBytes per pixels: %d\nSize: %d\n",
             image.width, image.height, image.bpp, sb);
@@ -111,3 +160,4 @@ main()
     
     return 0;
 }
+*/
