@@ -37,6 +37,44 @@ filter(int x, int y, Image *image, Color color, int cv)
 }
 
 void
+midpoint_circle(int x0, int y0, int radius, Color c, Image *image)
+{
+    int x = radius - 1;
+    int y = 0;
+    int dx = 1;
+    int dy = 1;
+    int err = dx - (radius << 1);
+
+    while (x >= y) {
+    printf("x: %d\n"
+            "y: %d\n"
+            "dx: %d\n"
+            "dy: %d\n"
+            "err: %d\n\n",
+            x, y, dx, dy, err);
+        plot(x0 + x, y0 + y, image, c);
+        plot(x0 + y, y0 + x, image, c);
+        plot(x0 - y, y0 + x, image, c);
+        plot(x0 - x, y0 + y, image, c);
+        plot(x0 - x, y0 - y, image, c);
+        plot(x0 - y, y0 - x, image, c);
+        plot(x0 + y, y0 - x, image, c);
+        plot(x0 + x, y0 - y, image, c);
+
+        if (err <= 0) {
+            y++;
+            err += dy;
+            dy += 2; 
+        }
+        if (err > 0) {
+            x--;
+            dx += 2;
+            err += (-radius << 1) + dx;
+        }
+    }
+}
+
+void
 scan(Image *image, char colors[][3], int numc) 
 {
     int x, y;
