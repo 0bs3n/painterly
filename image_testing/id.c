@@ -37,7 +37,7 @@ filter(int x, int y, Image *image, Color color, int cv)
 }
 
 void
-midpoint_circle(int x0, int y0, int radius, Color c, Image *image)
+midpoint_circle(int x0, int y0, int radius, int filled, Color c, Image *image)
 {
     int x = radius - 1;
     int y = 0;
@@ -52,14 +52,29 @@ midpoint_circle(int x0, int y0, int radius, Color c, Image *image)
             "dy: %d\n"
             "err: %d\n\n",
             x, y, dx, dy, err);
-        plot(x0 + x, y0 + y, image, c);
-        plot(x0 + y, y0 + x, image, c);
-        plot(x0 - y, y0 + x, image, c);
-        plot(x0 - x, y0 + y, image, c);
-        plot(x0 - x, y0 - y, image, c);
-        plot(x0 - y, y0 - x, image, c);
-        plot(x0 + y, y0 - x, image, c);
-        plot(x0 + x, y0 - y, image, c);
+        if (filled) {
+            int i;
+            for (i = x0 - x; i < x0 + x; i++) {
+                plot(i, y0 - y, image, c);
+                plot(i, y0 + y, image, c);
+            }
+
+            for (i = x0 - y; i < x0 + y; i++) {
+                plot(i, y0 - x, image, c);
+                plot(i, y0 + x, image, c);
+            }
+        }
+
+        else {
+            plot(x0 + x, y0 + y, image, c);
+            plot(x0 + y, y0 + x, image, c);
+            plot(x0 - y, y0 + x, image, c);
+            plot(x0 - x, y0 + y, image, c);
+            plot(x0 - x, y0 - y, image, c);
+            plot(x0 - y, y0 - x, image, c);
+            plot(x0 + y, y0 - x, image, c);
+            plot(x0 + x, y0 - y, image, c);
+        }
 
         if (err <= 0) {
             y++;

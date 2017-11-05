@@ -26,11 +26,8 @@ main()
     char colors[32][3];
     unsigned char* empty = malloc(image.width * image.height * image.bpp);
     scan(&image, colors, 32);
-    // unsigned char* empty2 = malloc(image.width * image.height * image.bpp);
     memset(empty, 0x00, sb);
-    // memset(empty2, 0x00, sb);
     Image copy1 = { .data = empty, .height = image.height, .width = image.width, .bpp = image.bpp };
-    // Image copy2 = { .data = empty2, .height = image.height, .width = image.width, .bpp = image.bpp };
     int i;
     for (i = 0; i < 32; i++) {
         //draw_circle((i + 1) * 30, 500, 15, 1, colors[i], &copy1);
@@ -40,8 +37,8 @@ main()
     filter_circle(220, 600, 50, 1, 2, c2, &image);
     filter_circle(900, 600, 100, 1, 2, c2, &image);
 
-    midpoint_circle(600, 600, 20, c, &copy1);
-    draw_circle(560, 600, 20, 0, c, &copy1);
+    midpoint_circle(600, 600, 20, 0, c, &copy1);
+    midpoint_circle(560, 600, 20, 1, c, &copy1);
 
     draw_rect( 900, 900, 100, 100, c, &image);
 
