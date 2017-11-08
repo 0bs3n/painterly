@@ -14,7 +14,7 @@ main(int argc, char **argv)
     srand(time(NULL));
     Image image;
     char colors[color_depth][3];
-    char colors2[color_depth][3];
+    // char colors2[color_depth][3];
 
     image.data = stbi_load(
             argv[1], 
@@ -26,9 +26,11 @@ main(int argc, char **argv)
 
     unsigned char* data_working = malloc(image.size);
     unsigned char* data_output = malloc(image.size);
+    unsigned char* data_colorscheme = malloc(image.size);
 
     memset(data_working, 0xff, image.size);
     memset(data_output, 0xff, image.size);
+    memset(data_colorscheme, 0xff, image.size);
 
     Image working = { 
         .data = data_working, 
@@ -44,22 +46,29 @@ main(int argc, char **argv)
         .bpp = image.bpp 
     };
 
+    Image colorscheme = { 
+        .data = data_colorscheme, 
+        .height = image.height, 
+        .width = image.width, 
+        .bpp = image.bpp 
+    };
+
     working.size = working.bpp * working.width * working.height;
     output.size = output.bpp * output.width * output.height;
+    colorscheme.size = colorscheme.bpp * colorscheme.width * colorscheme.height;
 
-    scan(&image, &working, colors, color_depth);
-    scan_2(&image, colors2, color_depth);
+    scan(&image, colors, color_depth);
+    // scan_2(&image, colors2, color_depth);
     
     int x, y;
     int c;
     int wd, bd;
     int i = 0;
     int r = 10;
-    int iter = 1000000;
-    int num_images = 1000;
-    int snap = iter / num_images;
+    int iter = 10000000;
+    int num_images = 100;
+    int portion = iter / num_images;
     int j = 0;
-    /*
     while (i < iter) {
         x = rand() % image.width;
         y = rand() % image.height;
@@ -75,17 +84,19 @@ main(int argc, char **argv)
         else
             circ_diff(x, y, r, &output, &working, 1);
         ++i; 
-        if (WEBM_OUTPUT) {
-            if (i % snap == 0) {
+
+        if (i % portion == 0) {
+            if (WEBM_OUTPUT) {
                 char fn[100];
                 sprintf(fn, "output/%03d.bmp", j);
                 stbi_write_bmp(fn, output.width, output.height, output.bpp, output.data);
-                printf("%d/%d\n", j, num_images);
-                j++;
             }
+            printf("\r%d/%d", j, num_images);
+            fflush(stdout);
+            j++;
         }
     }
-    */
+    int it_count = i;
 
     int dx, dy;
     dx = 8;
@@ -100,8 +111,7 @@ main(int argc, char **argv)
             i = 0;
         }
 
-        // midpoint_circle(x, y, 20, 1, colors[j], &working);
-        midpoint_circle(x, y, 20, 1, colors2[j], &working);
+        midpoint_circle(x, y, 20, 1, colors[j], &colorscheme);
         i++;
     }
 
@@ -116,13 +126,13 @@ main(int argc, char **argv)
     // is actually desirable behaviour.
 
     printf("Width: %d\nHeight %d\nBytes per pixels: %d\nSize: %d\nIterations: %d\n",
-            image.width, image.height, image.bpp, image.size, i);
+            image.width, image.height, image.bpp, image.size, it_count);
 
-    stbi_write_bmp("working.bmp", working.width, working.height, working.bpp, working.data);
+    stbi_write_bmp("colorscheme.bmp", colorscheme.width, colorscheme.height, colorscheme.bpp, colorscheme.data);
     stbi_write_bmp("output.bmp", output.width, output.height, output.bpp, output.data);
 
     stbi_image_free(image.data);
-    free(working.data);
+    free(colorscheme.data);
     free(output.data);
     
     return 0;

@@ -34,6 +34,6 @@ void filter_circle(int h, int k, int r, int filled, int cv, Color c, Image *imag
 void midpoint_circle(int ux, int uy, int radius, int filled, Color c, Image *image);
 void midpoint_diff(int x0, int y0, int radius, Image *source, Image *copy);
 int  plot(int x, int y, Image *image, Color color);
-void scan(Image *image, Image *image2, char colors[][3], int numc);
+void scan(Image *image, char colors[][3], int numc);
 void scan_2(Image *image, char colors[][3], int numc);
 #endif

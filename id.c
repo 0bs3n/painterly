@@ -13,7 +13,7 @@ align(int num, int alignment)
 int
 plot(int x, int y, Image *image, Color color) 
 {
-    if (x > 0 && y > 0 && x < image->width && y < image->height) {
+    if (x >= 0 && y >= 0 && x < image->width && y < image->height) {
         int i;
         x *= image->bpp;
         int target_pixel = x + (y * (image->width * image->bpp));
@@ -27,7 +27,7 @@ plot(int x, int y, Image *image, Color color)
 int
 copy_plot(Image *dest, Image *source, int x, int y)
 {
-    if (x > 0 && y > 0 && x < dest->width && y < dest->height) {
+    if (x >= 0 && y >= 0 && x < dest->width && y < dest->height) {
         int i;
         x *= dest->bpp;
         int target_pixel = x + (y * (dest->width * dest->bpp));
@@ -211,7 +211,6 @@ scan_2(Image *image, char colors[][3], int numc)
     }
 
     int f2 = numc/f1;
-    printf("Factor 1: %d, Factor 2: %d\n", f1, f2);
      
     int x, y, i, j, k;
     int dx, dy;
@@ -238,7 +237,7 @@ scan_2(Image *image, char colors[][3], int numc)
 }
 
 void
-scan(Image *image, Image *image2, char colors[][3], int numc) 
+scan(Image *image, char colors[][3], int numc) 
 {
     int x, y;
     int i, j;
@@ -249,8 +248,6 @@ scan(Image *image, Image *image2, char colors[][3], int numc)
 
         for (i = 0; i < 3; i++) {
             colors[j][i] = image->data[(x + (y * image->width)) + i];
-            image2->data[(x + (y * image->width)) + i] = image->data[(x + (y * image->width)) + i];
-            // midpoint_circle(x / image->bpp, y / image->bpp, 20, 1, colors[j], image2);
         }
 
         // TODO: Cleanup up magic numbers below, in "j % 2" and "numc) * 4"
