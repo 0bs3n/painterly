@@ -1,4 +1,4 @@
-#include "id.h"
+#include <simg.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
 #define WEBM_OUTPUT 0
@@ -7,7 +7,7 @@ int
 main(int argc, char **argv) 
 {
     if (argc < 3) {
-        printf("need arguments");
+        printf("need arguments\n");
         exit(1);
     }
     int color_depth = atoi(argv[2]);
@@ -65,7 +65,7 @@ main(int argc, char **argv)
     int wd, bd;
     int i = 0;
     int r = 10;
-    int iter = 10000000;
+    int iter = atoi(argv[3]);
     int num_images = 100;
     int portion = iter / num_images;
     int j = 0;
