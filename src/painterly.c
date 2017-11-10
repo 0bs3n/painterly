@@ -1,4 +1,7 @@
-#include <simg.h>
+#include "siml.h"
+#include <time.h>
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 #include <stb_image_write.h>
 #define WEBM_OUTPUT 0
@@ -14,7 +17,6 @@ main(int argc, char **argv)
     srand(time(NULL));
     Image image;
     char colors[color_depth][3];
-    // char colors2[color_depth][3];
 
     image.data = stbi_load(
             argv[1], 
@@ -58,7 +60,6 @@ main(int argc, char **argv)
     colorscheme.size = colorscheme.bpp * colorscheme.width * colorscheme.height;
 
     scan(&image, colors, color_depth);
-    // scan_2(&image, colors2, color_depth);
     
     int x, y;
     int c;

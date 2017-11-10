@@ -1,10 +1,6 @@
-#ifndef ID_H
-#define ID_H
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#ifndef SIMG_H
+#define SIMG_H
 #include <math.h>
-#include <string.h>
 
 
 typedef struct {

@@ -1,17 +1,17 @@
-TARGET  = imgfuzz
+TARGET  = painterly
 CFLAGS  = -std=c99 -pedantic -Wall -O3
+DEPS 	= $(SRC_DIR)/painterly.c $(SRC_DIR)/siml.c
+INCLUDE = include
 SRC_DIR = src
-DEPS 	= $(SRC_DIR)/main.c $(SRC_DIR)/id.c
 LIBS    = -lm
 BIN_DIR = /usr/local/bin
-INCLUDE = -Iinclude
 OUTPUT 	= colorscheme.bmp output.bmp
 
 all: $(TARGET)
-debug: CFLAGS = -DDEBUG -g -std=c99 -pedantic -Wall
+
 
 $(TARGET): $(DEPS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(DEPS) $(INCLUDE) $(LIBS) 
+	$(CC) $(CFLAGS) -o $(TARGET) $(DEPS) $(LIBS) 
 
 clean:
 	$(RM) $(TARGET)
