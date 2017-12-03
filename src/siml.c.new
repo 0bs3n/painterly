@@ -17,8 +17,7 @@ plot(int x, int y, Image *image, Color color)
             image->data[target_pixel + i] = color[i];
         return 0;
     }
-
-    return 1;
+    else return 1;
 }
 
 int
@@ -32,8 +31,7 @@ copy_plot(Image *dest, Image *source, int x, int y)
             dest->data[target_pixel + i] = source->data[target_pixel + i];
         return 0;
     }
-
-    return 1;
+    else return 1;
 }
 
 
@@ -52,7 +50,7 @@ filter(int x, int y, Image *image, Color color, int cv)
 
 
 void
-draw_circle(int x0, int y0, int radius, int filled, Color c, Image *image)
+midpoint_circle(int x0, int y0, int radius, int filled, Color c, Image *image)
 {
     int x = radius - 1;
     int y = 0;
@@ -101,14 +99,14 @@ draw_circle(int x0, int y0, int radius, int filled, Color c, Image *image)
 float 
 calc(Image *source, Image *copy, int x, int y)
 {
-    int source_target     = (x + (y * source->width)) * source->bpp;
-    int copy_target       = (x + (y * source->width)) * source->bpp;
+    int source_target = (x + (y * source->width)) * source->bpp;
+    int copy_target   = (x + (y * source->width)) * source->bpp;
 
-    source_target         = source_target < source->size ? source_target : source->size;
-    copy_target           = copy_target < copy->size ? copy_target : copy->size;
+    source_target     = source_target < source->size ? source_target : source->size;
+    copy_target       = copy_target < copy->size ? copy_target : copy->size;
 
-    source_target         = source_target > 0 ? source_target : 0;
-    copy_target           = copy_target > 0 ? copy_target : 0;
+    source_target     = source_target > 0 ? source_target : 0;
+    copy_target       = copy_target > 0 ? copy_target : 0;
 
     unsigned char red_s   = source->data[source_target];
     unsigned char green_s = source->data[source_target + 1];
@@ -116,7 +114,6 @@ calc(Image *source, Image *copy, int x, int y)
     unsigned char red_c   = copy->data[copy_target];
     unsigned char green_c = copy->data[copy_target + 1];
     unsigned char blue_c  = copy->data[copy_target + 2];
-
     int rd, gd, bd;
     rd = (red_s - red_c) * (red_s - red_c);
     gd = (green_s - green_c) * (green_s - green_c);
@@ -148,11 +145,6 @@ circ_diff(int x0, int y0, int radius, Image *source, Image * copy, int mode)
 
         else {
             for (i = x0 - radius; i < x0 + radius; ++i) {
-                // TODO below we are diffing based on the average color value
-                // for the ENTIRE circle, it might be faster to diff on a single
-                // line of pixels, as in the broken line function, and might not
-                // impact the accuracy of the diff.
-                
                 diff += calc(copy, source, i, y0 + y);
                 diff += calc(copy, source, i, y0 - y);
                 diff += calc(copy, source, i, y0 + x);
@@ -166,68 +158,6 @@ circ_diff(int x0, int y0, int radius, Image *source, Image * copy, int mode)
                 dy += 2; 
             }
 
-            if (err > 0) {
-                x--;
-                dx += 2;
-                err += (-radius << 1) + dx;
-            }
-    }
-    return diff;
-}
-
-int
-broken_line_diff(int x0, int y0, int radius, Image *source, Image * copy, int mode)
-{
-    // TODO The final piece of the puzzle. mode=1 Only draws horizontal slivers of circles,
-    // 1px high, along the center of the circle. mode=0 works fine, only the
-    // algorith to copy data (in the form of circles) from one image to the other
-    // appears faulty.
-    
-    int x = radius - 1;
-    int y = 0;
-    int dx = 1;
-    int dy = 1;
-    int err = dx - (radius << 1);
-    int diff = 0;
-// 
-    while (x >= y) {
-        int i;
-        int target = (x + (y * source->width * source->height * source->bpp));
-        // TODO the following scope appears to be the culprit interfering with the adjustment
-        // of algorithm values.
-        // However, if the condition is removed, the code hangs in the midlle
-        // of this function.
-        if (target < source->size) {
-            for (i = x0 - x; i < x0 + x; i++) {
-                if (mode) {
-                        copy_plot(copy, source, i, y0 - y);
-                        copy_plot(copy, source, i, y0 + y);
-                }
-
-                else {
-                    diff += calc(source, copy, i, y0 - y);
-                    diff += calc(source, copy, i, y0 + y);
-                }
-            }
-
-            for (i = x0 - y; i < x0 + y; i++) {
-                if (mode) {
-                    copy_plot(copy, source, i, y0 - x);
-                    copy_plot(copy, source, i, y0 + x);
-                }
-
-                else {
-                    diff += calc(source, copy, i, y0 - x);
-                    diff += calc(source, copy, i, y0 + x);
-                }
-            }
-        }
-
-            if (err <= 0) {
-                y++;
-                err += dy;
-                dy += 2; 
-            }
             if (err > 0) {
                 x--;
                 dx += 2;
@@ -306,6 +236,30 @@ draw_rect(int x, int y, int w, int h, Color c, Image *image)
     }
 }
 
+void
+filter_circle(int h, int k, int r, int filled, int cv, Color c, Image *image)
+{
+    int x, y;
+    int px, npx;
+    for (x = h - r, y = k - r; y <= k + r; x++) {
+        px = sqrt((r*r) - ((y - k) * (y - k))) + h;
+        npx = -sqrt((r*r) - ((y - k) * (y - k))) + h;
+        if (filled) {
+            for (; px >= h && npx <= h; px--, npx++) {
+                filter(px, y, image, c, cv);
+                filter(npx, y, image, c, cv);
+            }
+        } else {
+            filter(px, y, image, c, cv);
+            filter(npx, y, image, c, cv);
+        }
+
+        if (x == h + r + 1) {
+            x = h - r;
+            y++;
+        }
+    }
+}
 
 void
 draw_cross(int h, int k, int r,  Color c, Image *image)

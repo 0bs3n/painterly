@@ -4,15 +4,16 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 #include <stb_image_write.h>
-#define WEBM_OUTPUT 0
 
 int 
 main(int argc, char **argv) 
 {
-    if (argc < 3) {
+    if (argc < 4) {
+        // TODO print proper usage and implement proper command line arguments
         printf("need arguments\n");
         exit(1);
     }
+
     int color_depth = atoi(argv[2]);
     srand(time(NULL));
     Image image;
@@ -26,26 +27,26 @@ main(int argc, char **argv)
 
     image.size = image.width * image.height * image.bpp;
 
-    unsigned char* data_working = malloc(image.size);
-    unsigned char* data_output = malloc(image.size);
+    unsigned char* data_working     = malloc(image.size);
+    unsigned char* data_output      = malloc(image.size);
     unsigned char* data_colorscheme = malloc(image.size);
 
-    memset(data_working, 0xff, image.size);
-    memset(data_output, 0xff, image.size);
+    memset(data_working,     0xff, image.size);
+    memset(data_output,      0xff, image.size);
     memset(data_colorscheme, 0xff, image.size);
 
     Image working = { 
-        .data = data_working, 
+        .data   = data_working, 
         .height = image.height, 
-        .width = image.width, 
-        .bpp = image.bpp 
+        .width  = image.width, 
+        .bpp    = image.bpp 
     };
 
     Image output = { 
-        .data = data_output, 
+        .data   = data_output, 
         .height = image.height, 
-        .width = image.width, 
-        .bpp = image.bpp 
+        .width  = image.width, 
+        .bpp    = image.bpp 
     };
 
     Image colorscheme = { 
@@ -55,8 +56,8 @@ main(int argc, char **argv)
         .bpp = image.bpp 
     };
 
-    working.size = working.bpp * working.width * working.height;
-    output.size = output.bpp * output.width * output.height;
+    working.size     = working.bpp * working.width * working.height;
+    output.size      = output.bpp * output.width * output.height;
     colorscheme.size = colorscheme.bpp * colorscheme.width * colorscheme.height;
 
     scan(&image, colors, color_depth);
@@ -65,17 +66,19 @@ main(int argc, char **argv)
     int c;
     int wd, bd;
     int i = 0;
-    int r = 10;
+    int r = 5;
     int iter = atoi(argv[3]);
     int num_images = 100;
     int portion = iter / num_images;
     int j = 0;
+    int WEBM_OUTPUT = atoi(argv[4]);
+
     while (i < iter) {
         x = rand() % image.width;
         y = rand() % image.height;
         c = rand() % color_depth;
         
-        midpoint_circle(x, y, r, 1, colors[c], &working);
+        draw_circle(x, y, r, 1, colors[c], &working);
 
         wd = circ_diff(x, y, r, &image, &working, 0);
         bd = circ_diff(x, y, r, &image, &output, 0);
@@ -90,8 +93,13 @@ main(int argc, char **argv)
             if (WEBM_OUTPUT) {
                 char fn[100];
                 sprintf(fn, "output/%03d.bmp", j);
-                stbi_write_bmp(fn, output.width, output.height, output.bpp, output.data);
+                stbi_write_bmp(fn, 
+                               output.width, 
+                               output.height, 
+                               output.bpp, 
+                               output.data); 
             }
+
             printf("\r%d/%d", j, num_images);
             fflush(stdout);
             j++;
@@ -100,8 +108,12 @@ main(int argc, char **argv)
     int it_count = i;
 
     int dx, dy;
-    dx = 8;
-    dy = 4;
+    dx = sqrt(color_depth);
+    while (color_depth % dx != 0) {
+        dx--;
+    }
+    
+    dy = color_depth / dx;
     for (x = 20 + image.width / (2 * dx), y = 20 + image.height / (2 * dy), i = 0, j = 0; 
          x + (y * image.width) < image.size / image.bpp && j < color_depth; 
          x += image.width / dx, j++) {
@@ -112,29 +124,40 @@ main(int argc, char **argv)
             i = 0;
         }
 
-        midpoint_circle(x, y, 20, 1, colors[j], &colorscheme);
+        draw_circle(x, y, 20, 1, colors[j], &colorscheme);
         i++;
     }
 
-    // Currently, and initially unintentionally, circ_diff in mode=1 copies only slivers of circles,
-    // rather than the whole circle, as intended. It looks pretty nice but I'd like to figure out why.
-    // also, because output is drawn of slivers, while working is made of circles, the calls to
-    // circ_diff() attempting to copy from output to working (to correct erroneous placements of circles)
-    // have little effected, reverting only a sliver of the image to its previous state. 
-    // This results in working.bmp being untirely unrecognizeable compared to 
-    // the original image, but output comes out correctly. Once I figure out 
-    // how to copy whole circles back and forth, I can determine whether this 
-    // is actually desirable behaviour.
+    // Currently, and initially unintentionally, circ_diff in mode=1 copies 
+    // only slivers of circles, rather than the whole circle, as intended. It 
+    // looks pretty nice but I'd like to figure out why.  also, because output 
+    // is drawn of slivers, while working is made of circles, the calls to 
+    // circ_diff() attempting to copy from output to working (to correct 
+    // erroneous placements of circles) have little effected, reverting only a 
+    // sliver of the image to its previous state.  This results in working.bmp 
+    // being untirely unrecognizeable compared to the original image, but 
+    // output comes out correctly. Once I figure out how to copy whole circles 
+    // back and forth, I can determine whether this is actually desirable behaviour.
 
     printf("Width: %d\nHeight %d\nBytes per pixels: %d\nSize: %d\nIterations: %d\n",
             image.width, image.height, image.bpp, image.size, it_count);
 
-    stbi_write_bmp("colorscheme.bmp", colorscheme.width, colorscheme.height, colorscheme.bpp, colorscheme.data);
-    stbi_write_bmp("output.bmp", output.width, output.height, output.bpp, output.data);
+    stbi_write_bmp("colorscheme.bmp", 
+                    colorscheme.width, 
+                    colorscheme.height, 
+                    colorscheme.bpp, 
+                    colorscheme.data);
+
+    stbi_write_bmp("output.bmp", 
+                    output.width, 
+                    output.height, 
+                    output.bpp, 
+                    output.data);
 
     stbi_image_free(image.data);
     free(colorscheme.data);
     free(output.data);
+    free(working.data);
     
     return 0;
 }
