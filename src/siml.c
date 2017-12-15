@@ -40,48 +40,6 @@ plot(int x, int y, Image *image, Color color)
     return 1;
 }
 
-void
-get_dominant_color(Image *image, Color color)
-{
-    // FIXME: This function is disgusting and only works for bpp = 3,
-    // aka RGB colorspaces, no alpha. Uses and ungodly amount of memory,
-    // though only briefly. Also requires <string.h> and <stdio.h> to be pulled in.
-    // does not seem to be particularly useful either, as it only grabs one color.
-     
-    unsigned char **colors = full_scan(image);
-    unsigned long *count = malloc(0xffffff * sizeof(unsigned long));
-    memset(count, 0, 0xffffff * sizeof(unsigned long));
-
-    for (int i = 0; i < image->width * image->height; ++i) {
-        char colorval[8]; 
-        sprintf(colorval, "%02x%02x%02x", colors[i][0], colors[i][1], colors[i][2]);
-        unsigned long color_id = strtol(colorval, NULL, 16);
-        count[color_id]++;
-    }
-    unsigned long highest = 0;
-    int highest_index = 0;
-    for (int i = 0; i < 0xffffff; ++i) {
-        if (count[i] > highest) {
-            highest = count[i];
-            highest_index = i;
-        }
-    }
-    char cv[10];
-    char* p = cv;
-    sprintf(cv, "%x", highest_index);
-    char r[3], g[3], b[3];
-
-    memcpy(r, p, 2);
-    r[2] = '\0';
-    memcpy(g, p += 2, 2);
-    g[2] = '\0';
-    memcpy(b, p + 2, 2);
-    b[2] = '\0';
-    color[0] = (unsigned char)strtol(r, NULL, 16);
-    color[1] = (unsigned char)strtol(g, NULL, 16);
-    color[2] = (unsigned char)strtol(b, NULL, 16);
-    free(count);
-}
 
 int
 line_diff(Image *source, Image *copy, int x0, int y0, int x1, int y1, int copy_mode)
@@ -551,3 +509,107 @@ sample_point(Image *image, unsigned char color[], int x, int y)
     }
 }
 
+static void 
+id_to_color(int id, Color color)
+{
+    // FIXME: need to refactor for colorspaces other than RGB. Current hack
+    // is to simply set alpha channel (color[3]) to 0xff.
+    char cv[10];
+    char* str = cv;
+    sprintf(cv, "%x", id);
+    char r[3], g[3], b[3];
+    memcpy(r, str, 2);
+    r[2] = '\0';
+    memcpy(g, str + 2, 2);
+    g[2] = '\0';
+    memcpy(b, str + 4, 2);
+    b[2] = '\0';
+    color[0] = (unsigned char)strtol(r, NULL, 16);
+    color[1] = (unsigned char)strtol(g, NULL, 16);
+    color[2] = (unsigned char)strtol(b, NULL, 16);
+    color[3] = 0xff;
+}
+
+
+static int 
+color_to_id(Color color) {
+    char colorval[8]; 
+    sprintf(colorval, "%02x%02x%02x", color[0], color[1], color[2]);
+    unsigned int color_id = strtol(colorval, NULL, 16);
+    return color_id;
+}
+
+
+static int 
+find_last_occurance(int elem, int *array, size_t nmemb) 
+{
+    int low = 0, high = nmemb - 1, result = -1;
+    while (low <= high) {
+        int mid = (low + high) >> 1;
+        if (array[mid] == elem) {
+            result = mid;
+            // high = mid - 1; for finding first element instead of last one.
+            low = mid + 1;
+        }
+        else if (elem < array[mid]) high = mid - 1;
+        else low = mid + 1;
+    }
+    return result;
+}
+
+
+static int
+color_compare(const void* a, const void* b)
+{
+    return *(int*)a - *(int*)b;
+}
+
+static int
+scanned_color_compare(const void* a, const void* b)
+{
+    return ((Scanned_color*)a)->frequency - ((Scanned_color*)b)->frequency;
+}
+
+
+void 
+reduce_color_pallete(Image *image, unsigned char **new_pallete, int num_colors) 
+{
+    Scanned_color *scanned_colors = malloc(image->width * image->height * sizeof(Scanned_color));
+    unsigned char **colors = full_scan(image);
+    int *color_ids = malloc(image->width * image->height * sizeof(int));
+
+    for (int i = 0; i < image->width * image->height; ++i) {
+        color_ids[i] = color_to_id(colors[i]);
+    }
+
+    qsort(color_ids, image->width * image->height, sizeof(int), color_compare);
+
+    int i = 0;
+    int num_unique_colors = 0;
+    while (i < image->width * image->height) {
+        int count = find_last_occurance(color_ids[i], color_ids, image->width * image->height) - i + 1;
+
+        Color curr_color;
+        id_to_color(color_ids[i], curr_color);
+        scanned_colors[num_unique_colors].frequency = count; 
+        for (int j = 0; j < image->bpp; ++j) {
+            scanned_colors[num_unique_colors].color[j] = curr_color[j];
+        }
+        num_unique_colors++;
+        i += count;
+    }
+
+    qsort(scanned_colors, num_unique_colors, sizeof(Scanned_color), scanned_color_compare);
+
+    unsigned char **pallete = malloc(num_colors * sizeof(unsigned char*));
+    for (int i = 0; i < num_colors; ++i) {
+        pallete[i] = malloc(image->bpp);
+    }
+
+    for (int i = 0; i < num_colors; ++i) {
+        for (int k = 0; k < image->bpp; ++k) {
+            pallete[i][k] = scanned_colors[num_unique_colors - i - 1].color[k];
+        }
+        new_pallete[i] = pallete[i];
+    }
+}

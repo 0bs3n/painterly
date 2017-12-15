@@ -51,11 +51,9 @@ main(int argc, char **argv)
 
     Color color;
     
-    // int x, y;
     int x0, y0, x1, y1, rx, ry;
     int wd, bd;
     int i = 0;
-    // int r = atoi(argv[4]);
     int iter = atoi(argv[2]);
     int num_images = 1000;
     int portion = iter / num_images;
