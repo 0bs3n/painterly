@@ -33,6 +33,11 @@ main(int argc, char **argv)
     memset(data_working,     0xff, image.size);
     memset(data_output,      0xff, image.size);
 
+    int num_colors = 16;
+    unsigned char **palette = siml_init_color(num_colors, image.bpp);
+
+    reduce_color_pallete(&image, palette, num_colors);
+
     Image working = { 
         .data   = data_working, 
         .height = image.height, 
@@ -49,9 +54,7 @@ main(int argc, char **argv)
         .size   = image.size
     };
 
-    Color color;
-    
-    int x0, y0, x1, y1, rx, ry;
+    int x0, y0, x1, y1, rx, ry, c;
     int wd, bd;
     int i = 0;
     int iter = atoi(argv[2]);
@@ -63,18 +66,21 @@ main(int argc, char **argv)
     if (argv[4]) {
         max_line_length = atoi(argv[4]);
     }
-    printf("%d\n", max_line_length);
 
+    // Color color;
 
     while (i < iter) {
-        x0 = rand() % image.width;
-        y0 = rand() % image.height;
+        x0 =  rand() % image.width;
+        y0 =  rand() % image.height;
         x1 = (rand() % (max_line_length << 1)) + (x0 - max_line_length);
         y1 = (rand() % (max_line_length << 1)) + (y0 - max_line_length);
-        rx = rand() % image.width;
-        ry = rand() % image.height;
-        sample_point(&image, color, rx, ry);
-        draw_line(&output, color, x0, y0, x1, y1);
+        rx =  rand() % image.width;
+        ry =  rand() % image.height;
+        c  =  rand() % num_colors;
+        // sample_point(&image, color, rx, ry);
+
+        draw_line(&output, palette[c], x0, y0, x1, y1);
+        // draw_line(&output, color, x0, y0, x1, y1);
 
         wd = line_diff(&working, &image, x0, y0, x1, y1, 0);
         bd = line_diff(&output, &image, x0, y0, x1, y1, 0);
@@ -84,24 +90,6 @@ main(int argc, char **argv)
         else
             line_diff(&working, &output, x0, y0, x1, y1, 1);
         ++i;
-
-        /* Section for using circles as the primitive to draw
-        x = rand() % image.width;
-        y = rand() % image.height;
-
-        sample_point(&image, color, x, y);
-        
-        draw_circle(x, y, r, 1, color, &working);
-
-        wd = circ_diff(x, y, r, &image, &working, 0);
-        bd = circ_diff(x, y, r, &image, &output, 0);
-
-        if (wd < bd) 
-            circ_diff(x, y, r, &working, &output, 1);
-        else
-            circ_diff(x, y, r, &output, &working, 1);
-        ++i; 
-        */
 
         if ((i - 1) % portion == 0) {
             if (WEBM_OUTPUT) {
@@ -126,6 +114,15 @@ main(int argc, char **argv)
     printf("Width: %d\nHeight %d\nBytes per pixels: %d\nSize: %d\nIterations: %d\n",
             image.width, image.height, image.bpp, image.size, i);
 
+    Image color_palette = generate_palette_image(palette, num_colors);
+
+    stbi_write_png("colorscheme.png", 
+                    color_palette.width, 
+                    color_palette.height, 
+                    color_palette.bpp, 
+                    color_palette.data, 
+                    color_palette.width * color_palette.bpp);
+
     stbi_write_png("output.png", 
                     output.width, 
                     output.height, 
@@ -134,9 +131,11 @@ main(int argc, char **argv)
                     output.width * output.bpp);
 
     stbi_image_free(image.data);
-    free(output.data);
-    free(working.data);
-    
+    stbi_image_free(output.data);
+    stbi_image_free(working.data);
+    stbi_image_free(color_palette.data);
+    siml_free_color(palette, num_colors);
+
     return 0;
 }
 

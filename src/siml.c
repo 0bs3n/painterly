@@ -65,7 +65,7 @@ line_diff(Image *source, Image *copy, int x0, int y0, int x1, int y1, int copy_m
     if (dy > dx) {
         if (stepy < 0) {
             for (y = y0; y >= y1; y+=stepy) {
-                if (copy_mode)
+                if (copy_mode) 
                     copy_plot(source, copy, x, y);
                 else
                     diff += calc(source, copy, x, y);
@@ -116,6 +116,7 @@ draw_line(Image *image, Color color,
         swap(&x0, &x1, sizeof(int));
         swap(&y0, &y1, sizeof(int));
     } 
+
 
     int dx = x1 - x0;
     int dy = y1 - y0;
@@ -242,14 +243,15 @@ draw_circle(int x0, int y0, int radius, int filled, Color c, Image *image)
 int 
 calc(Image *source, Image *copy, int x, int y)
 {
+    int diff;
     int source_target     = (x + (y * source->width)) * source->bpp;
     int copy_target       = (x + (y * source->width)) * source->bpp;
 
     source_target         = source_target < source->size ? 
-                            source_target : source->size;
+                            source_target : source->size - source->bpp;
 
     copy_target           = copy_target < copy->size ? 
-                            copy_target : copy->size;
+                            copy_target : copy->size - copy->bpp;
 
     source_target         = source_target > 0 ? source_target : 0;
     copy_target           = copy_target > 0 ? copy_target : 0;
@@ -265,7 +267,7 @@ calc(Image *source, Image *copy, int x, int y)
     rd = abs(red_s - red_c);
     gd = abs(green_s - green_c);
     bd = abs(blue_s - blue_c);
-    int diff = rd + gd + bd;
+    diff = rd + gd + bd;
     return diff;
 }
 
@@ -395,7 +397,7 @@ full_scan(Image *image) {
         malloc(image->width * image->height * sizeof(char*));
 
     for (i = 0; i < image_end; ++i) {
-        colors[i] = malloc(3);
+        colors[i] = malloc(image->bpp);
         for (j = 0; j < image->bpp; ++j) {
             colors[i][j] = image->data[(i * image->bpp) + j];
         }
@@ -404,8 +406,20 @@ full_scan(Image *image) {
     return colors;
 }
 
+
+unsigned char**
+siml_init_color(int pixels, int color_depth)
+{
+    unsigned char **color = malloc(pixels * sizeof(char*));
+    for (int i = 0; i < pixels; ++i) {
+        color[i] = malloc(color_depth);
+    }
+    return color;
+}
+
+
 void
-siml_free(unsigned char** colors, size_t nmemb)
+siml_free_color(unsigned char** colors, size_t nmemb)
 {
     size_t i;
     for (i = 0; i < nmemb; ++i) {
@@ -571,6 +585,7 @@ scanned_color_compare(const void* a, const void* b)
 }
 
 
+
 void 
 reduce_color_pallete(Image *image, unsigned char **new_pallete, int num_colors) 
 {
@@ -605,11 +620,66 @@ reduce_color_pallete(Image *image, unsigned char **new_pallete, int num_colors)
     for (int i = 0; i < num_colors; ++i) {
         pallete[i] = malloc(image->bpp);
     }
-
-    for (int i = 0; i < num_colors; ++i) {
+    for (int i = 0, target = 0; i < num_colors; ++i) {
         for (int k = 0; k < image->bpp; ++k) {
-            pallete[i][k] = scanned_colors[num_unique_colors - i - 1].color[k];
+            pallete[i][k] = scanned_colors[num_unique_colors - target - 1].color[k];
         }
-        new_pallete[i] = pallete[i];
+        target += (num_unique_colors / num_colors);
+        for (int d = 0; d < image->bpp; ++d) {
+            new_pallete[i][d] = pallete[i][d];
+        }
     }
+
+    siml_free_color(colors, image->width * image->height);
+    siml_free_color(pallete, num_colors);
+    free(scanned_colors);
+    free(color_ids);
+}
+
+void
+print_color(Color color, int color_depth)
+{
+    for (int i = 0; i < color_depth; ++i) {
+        printf("%x", color[i]);
+    }
+    printf("\n");
+}
+
+Image 
+generate_palette_image(unsigned char **palette, int num_colors)
+{
+    int err = num_colors % 8;
+    int height = !err ? 20 * (num_colors / 8) : 20 * ((num_colors / 8) + 1);
+
+    Image output = {
+        .data = malloc(80 * (20 * ((num_colors / 8) + 1)) * 3),
+        .width = 80,
+        .height = height,
+        .size = num_colors * 10 * 20 * 3,
+        .bpp = 3
+    };
+
+    int x, y, i;
+
+    for (x = 0, y = 0, i = 0; i < num_colors; ++i) {
+        draw_rect(x, y, 10, 19, palette[i], &output);
+        x+=10;
+        if (x && x % 80 == 0) {
+            x = 0;
+            y += 20;
+        }
+    }
+
+    Color light_grey = { 0xa5, 0xa5, 0xa5 };
+    Color dark_grey = { 0x7a, 0x7a, 0x7a };
+    if (x + (y * output.width) < output.width * output.height) {
+        for (;x < output.width; ++x) {
+            for (int j = y; j < output.height; j += 2) {
+                plot(x, j, &output, dark_grey);
+                plot(x, j + 1, &output, light_grey);
+            }
+            swap(&light_grey, &dark_grey, sizeof(Color));
+        }
+    }
+    return output;
 }
