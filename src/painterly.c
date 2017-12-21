@@ -10,7 +10,7 @@
 int 
 main(int argc, char **argv) 
 {
-    if (argc < 3) {
+    if (argc < 4) {
         // TODO print proper usage and implement proper command line arguments
         printf("need arguments\n");
         exit(1);
@@ -33,7 +33,8 @@ main(int argc, char **argv)
     memset(data_working,     0xff, image.size);
     memset(data_output,      0xff, image.size);
 
-    int num_colors = 16;
+    // int num_colors = atoi(argv[5]);
+    int num_colors = atoi(argv[4]);
     unsigned char **palette = siml_init_color(num_colors, image.bpp);
 
     reduce_color_pallete(&image, palette, num_colors);
@@ -63,8 +64,8 @@ main(int argc, char **argv)
     int j = 0;
     int WEBM_OUTPUT = atoi(argv[3]);
     int max_line_length = MIN(image.width, image.height) / 12;
-    if (argv[4]) {
-        max_line_length = atoi(argv[4]);
+    if (argv[5]) {
+        max_line_length = atoi(argv[5]);
     }
 
     // Color color;
@@ -94,7 +95,7 @@ main(int argc, char **argv)
         if ((i - 1) % portion == 0) {
             if (WEBM_OUTPUT) {
                 char fn[100];
-                sprintf(fn, "output/%03d.png", j);
+                sprintf(fn, "video/%03d.png", j);
                 stbi_write_png(fn, 
                                output.width, 
                                output.height, 

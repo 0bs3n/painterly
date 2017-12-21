@@ -293,23 +293,10 @@ circ_diff(int x0, int y0, int radius, Image *source, Image * copy, int mode)
                 copy_plot(copy, source, i, y0 + x);
                 copy_plot(copy, source, i, y0 - x);
             }
-
-            /*
-            for (i = x0 - radius; i < x0 + radius; ++i) {
-                copy_plot(copy, source, i, y0 + y);
-                copy_plot(copy, source, i, y0 - y);
-                copy_plot(copy, source, i, y0 + x);
-                copy_plot(copy, source, i, y0 - x);
-            }
-            */
         } 
 
         else {
             for (i = x0 - radius; i < x0 + radius; ++i) {
-                // TODO below we are diffing based on the average color value
-                // for the ENTIRE circle, it might be faster to diff on a single
-                // line of pixels, as in the broken line function, and might not
-                // impact the accuracy of the diff.
                 
                 diff += calc(copy, source, i, y0 + y);
                 diff += calc(copy, source, i, y0 - y);
