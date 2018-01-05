@@ -1,26 +1,56 @@
 #include "siml.h"
-#include <time.h>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image.h>
-#include <stb_image_write.h>
+#include "stb_image.h"
+#include "stb_image_write.h"
+
+#include <time.h>
 
 #define MIN(x, y) (x < y ? x : y)
+
+void
+printf_usage(int exit_code) {
+    printf("usage\n");
+    exit(exit_code);
+}
 
 int 
 main(int argc, char **argv) 
 {
-    if (argc < 4) {
-        // TODO print proper usage and implement proper command line arguments
-        printf("need arguments\n");
-        exit(1);
+    int iter = 1000000;
+    int num_colors = 64;
+    int WEBM_OUTPUT = 0;
+    int file_provided = 0;
+    char input_file[256];
+
+    for (int i = 0; i < argc; ++i) {
+        if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
+            printf_usage(0); // FIXME: Implement this
+        } else if (!strcmp(argv[i], "--video-output")) {
+            WEBM_OUTPUT = 1;
+        } else if (!strcmp(argv[i], "-i") || !strcmp(argv[i], "--iterations")) {
+            iter = 1000 * atoi(argv[++i]);
+            printf("%d\n", iter);
+        } else if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--colors")) {
+            num_colors = atoi(argv[++i]);
+            printf("%d\n", num_colors);
+        } else if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "--input-file")) {
+            strncpy(input_file, argv[++i], 255);
+            file_provided = 1;
+            printf("%s\n", input_file);
+        }
+    }
+
+    if (!file_provided) {
+        printf("Please provide an image file with the ``-f'' or ``--input-file'' option\n");
+        printf_usage(1);
     }
 
     srand(time(NULL));
     Image image;
 
     image.data = stbi_load(
-            argv[1], 
+            input_file, 
             &image.width, 
             &image.height, 
             &image.bpp, 0);
@@ -33,7 +63,6 @@ main(int argc, char **argv)
     memset(data_working,     0xff, image.size);
     memset(data_output,      0xff, image.size);
 
-    int num_colors = atoi(argv[4]);
     unsigned char **palette = siml_init_palette(num_colors, image.bpp);
 
     reduce_color_pallete(&image, palette, num_colors);
@@ -57,15 +86,10 @@ main(int argc, char **argv)
     int x0, y0, x1, y1, rx, ry, c;
     int wd, bd;
     int i = 0;
-    int iter = atoi(argv[2]);
     int num_images = 1000;
     int portion = iter / num_images;
     int j = 0;
-    int WEBM_OUTPUT = atoi(argv[3]);
     int max_line_length = MIN(image.width, image.height) / 12;
-    if (argv[5]) {
-        max_line_length = atoi(argv[5]);
-    }
 
     while (i < iter) {
         x0 =  rand() % image.width;
