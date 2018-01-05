@@ -33,9 +33,8 @@ main(int argc, char **argv)
     memset(data_working,     0xff, image.size);
     memset(data_output,      0xff, image.size);
 
-    // int num_colors = atoi(argv[5]);
     int num_colors = atoi(argv[4]);
-    unsigned char **palette = siml_init_color(num_colors, image.bpp);
+    unsigned char **palette = siml_init_palette(num_colors, image.bpp);
 
     reduce_color_pallete(&image, palette, num_colors);
 
@@ -68,8 +67,6 @@ main(int argc, char **argv)
         max_line_length = atoi(argv[5]);
     }
 
-    // Color color;
-
     while (i < iter) {
         x0 =  rand() % image.width;
         y0 =  rand() % image.height;
@@ -78,10 +75,8 @@ main(int argc, char **argv)
         rx =  rand() % image.width;
         ry =  rand() % image.height;
         c  =  rand() % num_colors;
-        // sample_point(&image, color, rx, ry);
 
         draw_line(&output, palette[c], x0, y0, x1, y1);
-        // draw_line(&output, color, x0, y0, x1, y1);
 
         wd = line_diff(&working, &image, x0, y0, x1, y1, 0);
         bd = line_diff(&output, &image, x0, y0, x1, y1, 0);
@@ -115,7 +110,7 @@ main(int argc, char **argv)
     printf("Width: %d\nHeight %d\nBytes per pixels: %d\nSize: %d\nIterations: %d\n",
             image.width, image.height, image.bpp, image.size, i);
 
-    Image color_palette = generate_palette_image(palette, num_colors);
+    Image color_palette = gen_colorscheme(palette, num_colors);
 
     stbi_write_png("colorscheme.png", 
                     color_palette.width, 
@@ -135,7 +130,7 @@ main(int argc, char **argv)
     stbi_image_free(output.data);
     stbi_image_free(working.data);
     stbi_image_free(color_palette.data);
-    siml_free_color(palette, num_colors);
+    siml_free_palette(palette, num_colors);
 
     return 0;
 }

@@ -321,7 +321,7 @@ circ_diff(int x0, int y0, int radius, Image *source, Image * copy, int mode)
 }
 
 int
-broken_line_diff(int x0, int y0, int radius, Image *source, Image * copy, int mode)
+horiz_line_diff(int x0, int y0, int radius, Image *source, Image * copy, int mode)
 {
     int x = radius - 1;
     int y = 0;
@@ -373,7 +373,7 @@ broken_line_diff(int x0, int y0, int radius, Image *source, Image * copy, int mo
     return diff;
 }
 
-unsigned char**
+Palette
 full_scan(Image *image) {
 
     int i, j;
@@ -394,8 +394,8 @@ full_scan(Image *image) {
 }
 
 
-unsigned char**
-siml_init_color(int pixels, int color_depth)
+Palette
+siml_init_palette(int pixels, int color_depth)
 {
     unsigned char **color = malloc(pixels * sizeof(char*));
     for (int i = 0; i < pixels; ++i) {
@@ -406,7 +406,7 @@ siml_init_color(int pixels, int color_depth)
 
 
 void
-siml_free_color(unsigned char** colors, size_t nmemb)
+siml_free_palette(unsigned char** colors, size_t nmemb)
 {
     size_t i;
     for (i = 0; i < nmemb; ++i) {
@@ -549,7 +549,6 @@ find_last_occurance(int elem, int *array, size_t nmemb)
         int mid = (low + high) >> 1;
         if (array[mid] == elem) {
             result = mid;
-            // high = mid - 1; for finding first element instead of last one.
             low = mid + 1;
         }
         else if (elem < array[mid]) high = mid - 1;
@@ -617,8 +616,8 @@ reduce_color_pallete(Image *image, unsigned char **new_pallete, int num_colors)
         }
     }
 
-    siml_free_color(colors, image->width * image->height);
-    siml_free_color(pallete, num_colors);
+    siml_free_palette(colors, image->width * image->height);
+    siml_free_palette(pallete, num_colors);
     free(scanned_colors);
     free(color_ids);
 }
@@ -633,7 +632,7 @@ print_color(Color color, int color_depth)
 }
 
 Image 
-generate_palette_image(unsigned char **palette, int num_colors)
+gen_colorscheme(unsigned char **palette, int num_colors)
 {
     int err = num_colors % 8;
     int height = !err ? 20 * (num_colors / 8) : 20 * ((num_colors / 8) + 1);
