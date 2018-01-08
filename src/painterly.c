@@ -5,6 +5,7 @@
 #include "stb_image_write.h"
 
 #include <time.h>
+#include <unistd.h>
 
 #define MIN(x, y) (x < y ? x : y)
 
@@ -46,20 +47,20 @@ main(int argc, char **argv)
             printf_usage(0, argv[0]); // FIXME: Implement this
         } else if (!strcmp(argv[i], "-w") || !strcmp(argv[i], "--video-output")) {
             WEBM_OUTPUT = 1;
+
         } else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--sample-method")) {
-            if (!strcmp(argv[++i], "direct")) {
-                sample_method = DIRECT;
-            }
+            if (!strcmp(argv[++i], "direct")) { sample_method = DIRECT; }
         } else if (!strcmp(argv[i], "-i") || !strcmp(argv[i], "--iterations")) {
             iter = 1000 * atoi(argv[++i]);
-            printf("%d\n", iter);
         } else if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--colors")) {
             num_colors = atoi(argv[++i]);
-            printf("%d\n", num_colors);
         } else if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "--input-file")) {
             strncpy(input_file, argv[++i], 255);
+            if (access(input_file, F_OK) == -1) {
+                printf("File does not exist!\n");
+                printf_usage(1, argv[0]);
+            }
             file_provided = 1;
-            printf("%s\n", input_file);
         }
     }
 
