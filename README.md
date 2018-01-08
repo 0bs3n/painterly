@@ -13,13 +13,17 @@ painterly depends only on libsiml, and on stb_image/stb_image_write for image lo
 
 ### Installation
   The preferred build method is make:
+
     $ git clone https://github.com/Ethan-ks/painterly.git
     $ cd painterly
     $ make
 
   However, painterly can also be built using the following commands:
+
     $ gcc -o painterly src/*.c -Iinclude -Ofast -std=c99 -pedantic -Wall -lm 
+
   or from the Windows developer console:
+
     > cl src\painterly.c src\siml.c /Ox /Iinclude /Wall /link /out:painterly.exe
 
 ### Usage
