@@ -622,6 +622,7 @@ reduce_color_pallete(Image *image, unsigned char **new_pallete, int num_colors)
     free(color_ids);
 }
 
+
 void
 print_color(Color color, int color_depth)
 {
@@ -630,6 +631,7 @@ print_color(Color color, int color_depth)
     }
     printf("\n");
 }
+
 
 Image 
 gen_colorscheme(unsigned char **palette, int num_colors)

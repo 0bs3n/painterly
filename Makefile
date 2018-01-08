@@ -6,19 +6,20 @@ SRC_DIR = src
 LIBS    = -lm
 BIN_DIR = /usr/local/bin
 OUTPUT 	= colorscheme.png output.png
+OBJECTS = painterly.o siml.o
 
 all: $(TARGET)
 
+$(TARGET): painterly.o siml.o
+	$(CC) $(CFLAGS) -o painterly painterly.o siml.o $(LIBS)
 
-$(TARGET): $(DEPS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(INCLUDE) $(DEPS) $(LIBS) 
+painterly.o: src/painterly.c
+	$(CC) $(CFLAGS) -c src/painterly.c $(INCLUDE)
+
+siml.o: src/siml.c
+	$(CC) $(CFLAGS) -c src/siml.c $(INCLUDE)
 
 clean:
 	$(RM) $(TARGET)
 	$(RM) $(OUTPUT)
-
-
-
-
-
-
+	$(RM) $(OBJECTS)
