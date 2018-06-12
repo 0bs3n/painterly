@@ -22,7 +22,7 @@ printf_usage(int exit_code, char *fn) {
          "         [-c <num_colors>] \n"
          "         [-i <iterations / 1000>] \n"
          "         [-s/--sample-method direct | average]\n"
-         "         [-w/--video-output]", fn);
+         "         [-w/--video-output]\n", fn);
                                                     
     exit(exit_code);
 }
